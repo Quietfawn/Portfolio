@@ -26,26 +26,49 @@ module i2c #(
         STOP
     } state_t;
 
+    logic sda_direc;
     state_t state_r;
+    localparam HIGH = 1'b1;
+    localparam LOW = 1'b0;
+    logic [DATA_WIDTH - 1 : 0] data_in_r = '0;
 
-    logic [9:0] _100khz_counter;
+    always_comb begin : data_in_out
 
+    sda = sda_direc ? data_in_r[0] : 'bz;    
+        
+    end
+    
     // State machine (placeholder)
     always_ff @(posedge clk or posedge rst) begin
         if (!rst) begin
-            state <= 0;
-            busy  <= 0;
-            ack   <= 0;
+            state <= IDLE;
+            busy  <= LOW;
+            ack   <= LOW;
+            data_out <= '0;
+            busy <= LOW;
+            sda <= LOW;
+            scl <= LOW;
         end else begin
             case (state_r)
                 IDLE: begin
+
+                    ack <= LOW;
+                    sda <= HIGH; 
+                    scl <= HIGH; 
+
                     if (start) begin
+
                         state_r <= START;
-                        busy      <= 1;
+                        busy      <= HIGH;
+                        sda       <= LOW;
+                        data_in_r <= data_in;
+                        sda_direc <= HIGH;
+                        state <= START;
+
                     end
                 end
                 START: begin
-                    // Implement start condition
+                    // transmit address wait for ack then transmit data
                     state_r <= DATA;
                 end
                 DATA: begin
