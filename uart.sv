@@ -105,7 +105,7 @@ module uart_tx #(
       START: begin
 
           if(baud_tick_r > edge_reg) begin 
-            -
+            
             state_r <= TX;
             data_out <= 1'b0;
 
@@ -144,70 +144,99 @@ endmodule
 
 
 
-module uart_rx #(
-  parameter int baudrate = 115200,
-  parameter int clkHz = 100_000_000   
-)
+// module uart_rx #(
+//   parameter int baudrate = 115200,
+//   parameter int clkHz = 100_000_000   
+// )
+// (
+//   input logic clk,
+//   input logic rst,
+//   input logic baud_tick_r,
+//   output logic [7:0] data,
+//   output logic data_out,
+//   input logic data_in_ready,
+//   input logic baudclk_en_n
+// );
+
+//   typedef enum logic [1:0] { 
+//     IDLE,
+//     START,
+//     RX,
+//     XXX = 'x
+
+//   } state_t;
+
+//     state_t state_r;
+  
+//   logic [3:0] cntr;
+
+//   logic [7:0] data_r;
+  
+//   logic edge_reg;
+
+//   always_ff @(posedge clk or posedge rst) begin
+
+//     if(rst) begin
+
+//       state_r <= IDLE;
+//       data_out <= 1'b1;
+//       data_in_ready <= 1'b0;
+//       baudclk_en_n <= 1'b1;
+//       edge_reg <= '0;
+//       cntr <= '0;
+
+//     end else begin
+
+//     edge_reg <= baud_tick_r;
+
+
+//     case (state_r)
+    
+//       IDLE: begin
+
+//       end
+
+//       START: begin
+
+//         end
+      
+//       RX: begin
+
+//       end
+
+
+//     endcase
+
+//   end
+// end
+
+// endmodule
+
+
+module test #()
 (
   input logic clk,
-  input logic rst,
-  input logic baud_tick_r,
-  output logic [7:0] data,
-  output logic data_out,
-  input logic data_in_ready,
-  input logic baudclk_en_n
-);
+  output logic data_out
 
-  typedef enum logic [1:0] { 
-    IDLE,
-    START,
-    RX,
-    XXX = 'x
+ );
 
-  } state_t;
+ baud_tick baud_gen (
+  .clk(clk),
+  .rst(baud_rst),
+  .baud_clk(baud_tick)
+ );
 
-    state_t state_r;
-  
-  logic [3:0] cntr;
+ 
+ uart_tx uart_test (
+  .clk(clk),
+  .rst(1'b0),
+  .baud_tick_r(baud_tick),
+  .data(8'h3C),
+  .data_in_valid(1'b1),
+  .data_out(data_out),
+  .data_in_ready(),
+  .baudclk_en_n(baud_rst)
+ );
 
-  logic [7:0] data_r;
-  
-  logic edge_reg;
-
-  always_ff @(posedge clk or posedge rst) begin
-
-    if(rst) begin
-
-      state_r <= IDLE;
-      data_out <= 1'b1;
-      data_in_ready <= 1'b0;
-      baudclk_en_n <= 1'b1;
-      edge_reg <= '0;
-      cntr <= '0;
-
-    end else begin
-
-    edge_reg <= baud_tick_r;
-
-
-    case (state_r)
-    
-      IDLE: begin
-
-      end
-
-      START: begin
-
-        end
-      
-      RX: begin
-
-      end
-
-
-    endcase
-
-  end
-end
 
 endmodule
