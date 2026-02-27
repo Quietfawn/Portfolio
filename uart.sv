@@ -154,9 +154,9 @@ module uart_rx #(
   input logic rst,
   input logic baud_tick_r,
   output logic [7:0] data,
+  output logic data_valid,
   input logic uart_rx,
-  input logic data_in_ready,
-  input logic baudclk_en_n
+  output logic baudclk_en_n
 );
 
   typedef enum logic [1:0] { 
@@ -180,11 +180,10 @@ module uart_rx #(
     if(rst) begin
 
       state_r <= IDLE;
-      data_out <= 1'b1;
-      data_in_ready <= 1'b0;
       baudclk_en_n <= 1'b1;
       edge_reg <= '0;
       cntr <= '0;
+      data_valid <= '0;
 
     end else begin
 
@@ -195,7 +194,9 @@ module uart_rx #(
     
       IDLE: begin
 
-        if(uart_rx) begin 
+        data_valid <= '0;
+
+        if(uart_rx != 1'b1) begin 
 
           state_r <= START;
           baudclk_en_n <= 1'b0;
@@ -207,11 +208,35 @@ module uart_rx #(
       end
     end
 
-      START: begin29
+      START: begin
+
+        if (edge_reg > baud_tick_r) begin
+
+            baudclk_en_n <= 1'b1;
+            state_r <= RX;
+
+        end
 
         end
       
       RX: begin
+
+        baudclk_en_n <= 1'b0;
+
+        if(edge_reg < baud_tick_r) begin
+
+          data_r[int(cntr)] <= uart_rx;
+
+          cntr <= cntr + 1'b1;
+
+          if(cntr == 4'b1000) begin 
+          state_r <= IDLE;
+          cntr <= '0;
+          data <= data_r;
+          data_valid <= 1'b1;
+
+          end
+        end
 
       end
 
@@ -229,13 +254,16 @@ module test #()
   input logic clk,
   output logic data_out,
   input logic button,
-  output logic debug_out
+  output logic debug_out,
+  input logic data_in
 
  );
 
  logic button_r;
  logic data_valid;
  logic debug_r;
+ logic [7:0] data_reg;
+ logic [7:0] data;
 
  baud_tick baud_gen (
   .clk(clk),
@@ -248,16 +276,34 @@ module test #()
   .clk(clk),
   .rst(1'b0),
   .baud_tick_r(baud_tick),
-  .data(8'h47),
+  .data(data),
   .data_in_valid(data_valid),
   .uart_tx(data_out),
   .data_in_ready(),
   .baudclk_en_n(baud_rst)
  );
 
+ baud_tick baud_gen2 (
+  .clk(clk),
+  .rst(baud_rst2),
+  .baud_clk(baud_tick2)
+ );
+
+  uart_rx uart_test2 (
+  .clk(clk),
+  .rst(1'b0),
+  .baud_tick_r(baud_tick2),
+  .data(data_reg),
+  .data_valid(),
+  .uart_rx(data_in),
+  .baudclk_en_n(baud_rst2)
+ );
+
  assign debug_out = debug_r;
 
  always_ff @(posedge clk) begin 
+
+  data <= data_reg;
 
   debug_r <= data_out;
 
